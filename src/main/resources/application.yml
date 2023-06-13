@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: ai-wrapper
+  profiles:
+    active: local
+
+  boot:
+    admin:
+      client:
+        #spa的地址
+        url: http://${monitorIp:127.0.0.1}:8000
+        instance:
+          #自己的地址
+          service-url: http://${selfIp:127.0.0.1}:9970
+          prefer-ip: true
+        username: admin
+        password: hxkj2022
+
+management:
+  server:
+    port: 9970
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    enabled-by-default: true
+    web:
+      base-path: /actuator
+      exposure:
+        include: '*'
+
+logging:
+  file:
+    name: logs/${spring.application.name}/info.log
+
+mybatis:
+  mapper-locations:
+    - classpath:mappers/*.xml
+
+server:
+  compression:
+    min-response-size: 1024
+    enabled: true

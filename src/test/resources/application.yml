@@ -1,0 +1,85 @@
+spring:
+  application:
+    name: ai-wrapper
+  profiles:
+    active: test
+
+logging:
+  file:
+    name: logs/${spring.application.name}/info.log
+
+mybatis:
+  mapper-locations:
+    - classpath:mappers/*.xml
+
+server:
+  compression:
+    min-response-size: 1024
+    enabled: true
+
+# 是否主动更新所有国标通道（通过定时去做）
+# 一般来说，如果开启了目录订阅，是不需要手动去同步的，
+# 但是可能某些设备不支持目录订阅，只能自己定时去同步监控状态了
+autoSyncGBChannels:
+  enabled: false
+  cron: "0 0/5 * * * ?"
+
+# 用户登录后生成token保存在redis中的前缀
+tokenAuthPrefix: "auth:"
+
+mediaServer:
+  #  是否启用国标辅码流(国标播放后自动拉取)
+  gbSubStream:
+    enabled: false
+  # 是否开启media-server的ssl播放
+  #（默认代码中是通过判断ai-wrapper是否https来确定的，但如果media-server非https则会播放不了，因此加一个配置）
+  ssl:
+    enabled: false
+
+# 超级token，header认证Authorization带上这个不鉴权就可以访问API，如果不启用超级token，置空即可
+superToken: 44dc9d0a-85a9-41cc-9e14-193c4ba1c480
+
+# 是否定时刷新onvif设备列表
+onvif:
+  discovery:
+    enabled: false
+    cron: "0 0/1 * * * ?"
+
+
+license:
+  subject: license_demo
+  publicAlias: publicCert
+  storePass: public_password1234
+  licensePath: "C:\\transcode\\license\\license.lic"
+  publicKeysStorePath: "C:\\transcode\\license\\publicCerts.keystore"
+
+
+ai:
+  yolov7:
+    #      推流的默认服务器
+    pushUrlBase: rtmp://43.142.85.176:1935/detect/
+    algs:
+      # 交通流量识别
+      trafficFlow:
+        # conda env name
+        condaEnv: torch
+        # 脚本文件路径
+        pyPath: C:\Users\louis\IdeaProjects\AI-visual\zeta-object-detect\yolov7\detect_stream_for_java_call.py
+        # 权重文件路径
+        weights: D:\yolov7.pt
+        # 使用的设备 0 1 2 GPU | cpu CPU
+        device: 0
+        # 需要检测的类型 2-car 5-bus
+        classes: 2 5
+      # 人群密度识别
+      personCrowd:
+        # conda env name
+        condaEnv: torch
+        # 脚本文件路径
+        pyPath: C:\Users\louis\IdeaProjects\AI-visual\zeta-object-detect\yolov7\detect_stream_for_java_call.py
+        # 权重文件路径
+        weights: D:\yolov7.pt
+        # 使用的设备 0 1 2 GPU | cpu CPU
+        device: 0
+        # 需要检测的类型 0-person
+        classes: 0
