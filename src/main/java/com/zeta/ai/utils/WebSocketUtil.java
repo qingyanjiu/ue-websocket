@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.websocket.RemoteEndpoint.Async;
 import javax.websocket.Session;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -24,6 +25,9 @@ public class WebSocketUtil {
      * @Date: 2019/7/16
      **/
     public static final Map<String, Session> ONLINE_SESSION = new ConcurrentHashMap<>();
+
+    // 存储上线的session都在哪个会议室里面。key: meetingId, value: sessionId
+    public static final Map<String, List<Session>> MEETING_SESSION_MAPPER = new ConcurrentHashMap<>();
 
     /**
      * 
@@ -58,7 +62,9 @@ public class WebSocketUtil {
         Async async = session.getAsyncRemote();
         //发送消息
         Future<Void> future = async.sendText(message);
-        LOGGER.info("服务器发送给客户端" + session.getId() + "的消息:" + message);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("服务器发送给客户端" + session.getId() + "的消息:" + message);
+        }
     }
 }
 

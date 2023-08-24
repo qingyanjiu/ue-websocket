@@ -89,10 +89,14 @@
 <!--	</logger>-->
 
 	<!--记录druid-sql的记录-->
-	<logger name="druid.sql.Statement" level="info" additivity="true">
+	<logger name="druid.sql.Statement" level="info" additivity="false">
 		<!--AppenderRef ref="Console"/-->
 		<!--		<appender-ref ref="RollingFile"/>-->
 		<appender-ref ref="RollingFileError"/>
 		<appender-ref ref="druidSqlRollingFile"/>
+	</logger>
+
+	<logger name="com.zeta.ai" level="debug" additivity="false">
+		<appender-ref ref="STDOUT" />
 	</logger>
 </configuration>

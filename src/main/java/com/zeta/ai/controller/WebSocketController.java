@@ -1,6 +1,9 @@
 package com.zeta.ai.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zeta.ai.utils.WebSocketUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -9,9 +12,14 @@ import javax.websocket.*;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.zeta.ai.utils.WebSocketUtil.ONLINE_SESSION;
+import static com.zeta.ai.utils.WebSocketUtil.MEETING_SESSION_MAPPER;
 
 /**
  * 
@@ -27,6 +35,16 @@ public class WebSocketController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketController.class);
 
+    private static final String EVENT_ONLINE_WITH_VIDEO_AUDIO_STATE = "ONLINE_WITH_VIDEO_AUDIO_STATE_EVENT";
+    private static final String EVENT_VIDEO_AUDIO_STATE = "VIDEO_AUDIO_STATE_EVENT";
+    private static final String EVENT_ONLINE = "ONLINE_EVENT";
+    private static final String EVENT_OFFLINE = "OFFLINE_EVENT";
+    private static final String EVENT_START_SHARE = "START_SHARE_EVENT";
+    private static final String EVENT_STOP_SHARE = "STOP_SHARE_EVENT";
+
+    private ObjectMapper objectMapper = new ObjectMapper();
+
+
     /**
      * 
      * @Description: 加入连接
@@ -35,7 +53,9 @@ public class WebSocketController {
     @OnOpen
     public void onOpen(Session session) {
         String userNo = UUID.randomUUID().toString();
-        LOGGER.info("[" + userNo + "]加入连接!");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[" + userNo + "]加入连接!");
+        }
         WebSocketUtil.addSession(userNo, session);
     }
 
@@ -50,7 +70,9 @@ public class WebSocketController {
         ONLINE_SESSION.forEach((key, sess) -> {
             if (sess.getId().equals(session.getId())) {
                 WebSocketUtil.remoteSession(key);
-                LOGGER.info("{} 断开连接", key);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("{} 断开连接", key);
+                }
             }
         });
     }
@@ -76,11 +98,43 @@ public class WebSocketController {
             WebSocketUtil.sendMessage(recieverSession, message);
         } else {
             String _msg = message;
-            ONLINE_SESSION.forEach((key, sess) -> {
-                if (!sess.getId().equals(session.getId())) {
-                    WebSocketUtil.sendMessage(sess, _msg);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(_msg);
+            }
+            try {
+                Map<String, Object> data = objectMapper.readValue(message, Map.class);
+
+                // 事件名称
+                String eventName = data.get("eventName").toString();
+                // 会议id
+                String meetingId = data.get("meetingId").toString();
+                if (StringUtils.isNotBlank(meetingId) && StringUtils.isNotBlank(eventName)) {
+                    // 视频上线事件，保存会议信息到session
+                    if (EVENT_ONLINE_WITH_VIDEO_AUDIO_STATE.equals(eventName) || EVENT_ONLINE.equals(eventName)) {
+                        // 获取会议中session列表
+                        List<Session> list = MEETING_SESSION_MAPPER.getOrDefault(meetingId, new ArrayList<>());
+                        // 新session加入
+                        list.add(session);
+                        // 加入mapper，在判断用户和会议室的时候可以用
+                        MEETING_SESSION_MAPPER.put(meetingId, list);
+                    } else if (EVENT_OFFLINE.equals(eventName)) {
+                        // 视频下线事件，删除相关数据
+                        // 获取会议中session列表
+                        List<Session> list = MEETING_SESSION_MAPPER.getOrDefault(meetingId, new ArrayList<>());
+                        list = list.stream().filter(item -> item.getId().equals(session.getId())).collect(Collectors.toList());
+                    } else {
+                        // 其他事件类型
+                        // 需要接收数据的session列表，仅发送给同一个会议室的人, 但不包括自己
+                        List<Session> receiveSessions = MEETING_SESSION_MAPPER.get(meetingId).stream().filter(
+                                item -> item.getId().equals(session.getId())).collect(Collectors.toList());
+                        receiveSessions.forEach(s -> {
+                            WebSocketUtil.sendMessage(s, _msg);
+                        });
+                    }
                 }
-            });
+            } catch (JsonProcessingException e) {
+                LOGGER.error("数据格式不正确:{}", message);
+            }
         }
     }
 
