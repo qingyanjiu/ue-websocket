@@ -4,17 +4,17 @@ spring:
   profiles:
     active: local
 
-  boot:
-    admin:
-      client:
-        #spa的地址
-        url: http://${monitorIp:127.0.0.1}:8000
-        instance:
-          #自己的地址
-          service-url: http://${selfIp:127.0.0.1}:9970
-          prefer-ip: true
-        username: admin
-        password: hxkj2022
+#  boot:
+#    admin:
+#      client:
+#        #spa的地址
+#        url: http://${monitorIp:127.0.0.1}:8000
+#        instance:
+#          #自己的地址
+#          service-url: http://${selfIp:127.0.0.1}:9970
+#          prefer-ip: true
+#        username: admin
+#        password: hxkj2022
 
 management:
   server:

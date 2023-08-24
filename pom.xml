@@ -12,8 +12,8 @@
 	<groupId>com.zeta</groupId>
 	<artifactId>ue-websocket</artifactId>
 	<version>1.0.0</version>
-	<name>zeta ai wrapper</name>
-	<description>ai封装服务</description>
+	<name>websocket</name>
+	<description>websocket服务</description>
 
 <!--	<repositories>-->
 <!--		<repository>-->

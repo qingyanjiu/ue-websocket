@@ -23,7 +23,6 @@ public class WebsocketBootstrap extends LogManager {
 
 	private static String[] args;
 	private static ConfigurableApplicationContext context;
-	public static int GB_SYNC_LIMIT = 10;
 
 	public static void main(String[] args) {
 		try {
