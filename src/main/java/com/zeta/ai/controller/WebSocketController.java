@@ -97,17 +97,17 @@ public class WebSocketController {
             //发送普通信息
             WebSocketUtil.sendMessage(recieverSession, message);
         } else {
-            String _msg = message;
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(_msg);
+                LOGGER.debug("接收到事件信息:{}", message);
             }
             try {
                 Map<String, Object> data = objectMapper.readValue(message, Map.class);
 
                 // 事件名称
                 String eventName = data.get("eventName").toString();
+                Map<String, String> payload = (Map<String, String>) data.get("payload");
                 // 会议id
-                String meetingId = data.get("meetingId").toString();
+                String meetingId = payload.get("meetingId");
                 if (StringUtils.isNotBlank(meetingId) && StringUtils.isNotBlank(eventName)) {
                     // 视频上线事件，保存会议信息到session
                     if (EVENT_ONLINE_WITH_VIDEO_AUDIO_STATE.equals(eventName) || EVENT_ONLINE.equals(eventName)) {
@@ -117,22 +117,19 @@ public class WebSocketController {
                         list.add(session);
                         // 加入mapper，在判断用户和会议室的时候可以用
                         MEETING_SESSION_MAPPER.put(meetingId, list);
+                        // 再将上线信息发送给会议室其他人
+                        sendMsgToAttendeeInMeeting(meetingId, session, message);
                     } else if (EVENT_OFFLINE.equals(eventName)) {
                         // 视频下线事件，删除相关数据
                         // 获取会议中session列表
                         List<Session> list = MEETING_SESSION_MAPPER.getOrDefault(meetingId, new ArrayList<>());
                         list = list.stream().filter(item -> item.getId().equals(session.getId())).collect(Collectors.toList());
                     } else {
-                        // 其他事件类型
-                        // 需要接收数据的session列表，仅发送给同一个会议室的人, 但不包括自己
-                        List<Session> receiveSessions = MEETING_SESSION_MAPPER.get(meetingId).stream().filter(
-                                item -> item.getId().equals(session.getId())).collect(Collectors.toList());
-                        receiveSessions.forEach(s -> {
-                            WebSocketUtil.sendMessage(s, _msg);
-                        });
+                        // 其他事件类型，直接转发
+                        sendMsgToAttendeeInMeeting(meetingId, session, message);
                     }
                 }
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
                 LOGGER.error("数据格式不正确:{}", message);
             }
         }
@@ -147,6 +144,15 @@ public class WebSocketController {
             e.printStackTrace();
         }
         throwable.printStackTrace();
+    }
+
+    private void sendMsgToAttendeeInMeeting(String meetingId, Session mySession, String message) {
+        // 需要接收数据的session列表，仅发送给同一个会议室的人, 但不包括自己
+        List<Session> receiveSessions = MEETING_SESSION_MAPPER.get(meetingId).stream().filter(
+                item -> item.getId().equals(mySession.getId())).collect(Collectors.toList());
+        receiveSessions.forEach(s -> {
+            WebSocketUtil.sendMessage(s, message);
+        });
     }
 }
 
