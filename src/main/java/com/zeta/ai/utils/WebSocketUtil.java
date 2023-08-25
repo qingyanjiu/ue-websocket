@@ -26,8 +26,8 @@ public class WebSocketUtil {
      **/
     public static final Map<String, Session> ONLINE_SESSION = new ConcurrentHashMap<>();
 
-    // 存储上线的session都在哪个会议室里面。key: meetingId, value: sessionId
-    public static final Map<String, List<Session>> MEETING_SESSION_MAPPER = new ConcurrentHashMap<>();
+    // 存储上线的session都在哪个会议室里面。key: meetingId, value: Map<userId, session>
+    public static final Map<String, Map<String, Session>> MEETING_SESSION_MAPPER = new ConcurrentHashMap<>();
 
     /**
      * 

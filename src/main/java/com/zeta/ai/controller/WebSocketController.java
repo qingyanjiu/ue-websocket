@@ -12,10 +12,7 @@ import javax.websocket.*;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.zeta.ai.utils.WebSocketUtil.ONLINE_SESSION;
@@ -98,7 +95,7 @@ public class WebSocketController {
             WebSocketUtil.sendMessage(recieverSession, message);
         } else {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("接收到事件信息:{}", message);
+                LOGGER.debug("接收到事件信息{}", message);
             }
             try {
                 Map<String, Object> data = objectMapper.readValue(message, Map.class);
@@ -108,25 +105,28 @@ public class WebSocketController {
                 Map<String, String> payload = (Map<String, String>) data.get("payload");
                 // 会议id
                 String meetingId = payload.get("meetingId");
+                // userId
+                String userId = payload.get("userId");
                 if (StringUtils.isNotBlank(meetingId) && StringUtils.isNotBlank(eventName)) {
                     // 视频上线事件，保存会议信息到session
                     if (EVENT_ONLINE_WITH_VIDEO_AUDIO_STATE.equals(eventName) || EVENT_ONLINE.equals(eventName)) {
                         // 获取会议中session列表
-                        List<Session> list = MEETING_SESSION_MAPPER.getOrDefault(meetingId, new ArrayList<>());
+                        Map<String, Session> map = MEETING_SESSION_MAPPER.getOrDefault(meetingId, new HashMap<>());
                         // 新session加入
-                        list.add(session);
+                        map.put(userId, session);
                         // 加入mapper，在判断用户和会议室的时候可以用
-                        MEETING_SESSION_MAPPER.put(meetingId, list);
+                        MEETING_SESSION_MAPPER.put(meetingId, map);
                         // 再将上线信息发送给会议室其他人
-                        sendMsgToAttendeeInMeeting(meetingId, session, message);
+                        sendMsgToAttendeeInMeeting(meetingId, userId, session, message);
+                        // @@@@@@@@@@@@ 可以考虑加个定时判断空map给删除的逻辑，每天夜里轮训一次，把所有结束的会议信息删掉
                     } else if (EVENT_OFFLINE.equals(eventName)) {
                         // 视频下线事件，删除相关数据
                         // 获取会议中session列表
-                        List<Session> list = MEETING_SESSION_MAPPER.getOrDefault(meetingId, new ArrayList<>());
-                        list = list.stream().filter(item -> item.getId().equals(session.getId())).collect(Collectors.toList());
+                        Map<String, Session> map = MEETING_SESSION_MAPPER.getOrDefault(meetingId, new HashMap<>());
+                        map.remove(userId);
                     } else {
                         // 其他事件类型，直接转发
-                        sendMsgToAttendeeInMeeting(meetingId, session, message);
+                        sendMsgToAttendeeInMeeting(meetingId, userId, session, message);
                     }
                 }
             } catch (Exception e) {
@@ -146,12 +146,12 @@ public class WebSocketController {
         throwable.printStackTrace();
     }
 
-    private void sendMsgToAttendeeInMeeting(String meetingId, Session mySession, String message) {
+    private void sendMsgToAttendeeInMeeting(String meetingId, String userId, Session mySession, String message) {
         // 需要接收数据的session列表，仅发送给同一个会议室的人, 但不包括自己
-        List<Session> receiveSessions = MEETING_SESSION_MAPPER.get(meetingId).stream().filter(
-                item -> item.getId().equals(mySession.getId())).collect(Collectors.toList());
-        receiveSessions.forEach(s -> {
-            WebSocketUtil.sendMessage(s, message);
+        MEETING_SESSION_MAPPER.get(meetingId).forEach((k, v) -> {
+            if (!k.equals(userId)) {
+                WebSocketUtil.sendMessage(v, message);
+            }
         });
     }
 }
