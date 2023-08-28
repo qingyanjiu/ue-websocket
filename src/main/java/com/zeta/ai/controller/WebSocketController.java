@@ -116,18 +116,16 @@ public class WebSocketController {
                         map.put(userId, session);
                         // 加入mapper，在判断用户和会议室的时候可以用
                         MEETING_SESSION_MAPPER.put(meetingId, map);
-                        // 再将上线信息发送给会议室其他人
-                        sendMsgToAttendeeInMeeting(meetingId, userId, session, message);
                         // @@@@@@@@@@@@ 可以考虑加个定时判断空map给删除的逻辑，每天夜里轮训一次，把所有结束的会议信息删掉
                     } else if (EVENT_OFFLINE.equals(eventName)) {
                         // 视频下线事件，删除相关数据
                         // 获取会议中session列表
                         Map<String, Session> map = MEETING_SESSION_MAPPER.getOrDefault(meetingId, new HashMap<>());
                         map.remove(userId);
-                    } else {
-                        // 其他事件类型，直接转发
-                        sendMsgToAttendeeInMeeting(meetingId, userId, session, message);
                     }
+                    // 其他事件类型，直接转发
+                    // 发送所有类型的事件广播
+                    sendMsgToAttendeeInMeeting(meetingId, userId, session, message);
                 }
             } catch (Exception e) {
                 LOGGER.error("数据格式不正确:{}", message);

@@ -10,10 +10,10 @@
 	</parent>
 
 	<groupId>com.zeta</groupId>
-	<artifactId>ue-websocket</artifactId>
+	<artifactId>meeting-websocket</artifactId>
 	<version>1.0.0</version>
 	<name>websocket</name>
-	<description>websocket服务</description>
+	<description>视频会商-websocket服务</description>
 
 <!--	<repositories>-->
 <!--		<repository>-->
