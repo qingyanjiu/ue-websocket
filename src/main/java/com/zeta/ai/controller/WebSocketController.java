@@ -145,12 +145,14 @@ public class WebSocketController {
     }
 
     private void sendMsgToAttendeeInMeeting(String meetingId, String userId, Session mySession, String message) {
-        // 需要接收数据的session列表，仅发送给同一个会议室的人, 但不包括自己
-        MEETING_SESSION_MAPPER.get(meetingId).forEach((k, v) -> {
-            if (!k.equals(userId)) {
-                WebSocketUtil.sendMessage(v, message);
-            }
-        });
+        if (MEETING_SESSION_MAPPER.size() > 0) {
+            // 需要接收数据的session列表，仅发送给同一个会议室的人, 但不包括自己
+            MEETING_SESSION_MAPPER.get(meetingId).forEach((k, v) -> {
+                if (!k.equals(userId)) {
+                    WebSocketUtil.sendMessage(v, message);
+                }
+            });
+        }
     }
 }
 
