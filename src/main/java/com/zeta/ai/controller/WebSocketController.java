@@ -46,13 +46,12 @@ public class WebSocketController {
      * @Return:
      **/
     @OnOpen
-    public String onOpen(Session session) {
+    public void onOpen(Session session) {
         String userNo = UUID.randomUUID().toString();
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("[" + userNo + "]加入连接!");
         }
         WebSocketUtil.addSession(userNo, session);
-        return userNo;
     }
 
     /**
