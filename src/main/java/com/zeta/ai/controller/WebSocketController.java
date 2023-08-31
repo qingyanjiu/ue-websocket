@@ -46,12 +46,13 @@ public class WebSocketController {
      * @Return:
      **/
     @OnOpen
-    public void onOpen(Session session) {
+    public String onOpen(Session session) {
         String userNo = UUID.randomUUID().toString();
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("[" + userNo + "]加入连接!");
         }
         WebSocketUtil.addSession(userNo, session);
+        return userNo;
     }
 
     /**
@@ -151,7 +152,15 @@ public class WebSocketController {
             // 需要接收数据的session列表，仅发送给同一个会议室的人, 但不包括自己
             MEETING_SESSION_MAPPER.get(meetingId).forEach((k, v) -> {
                 if (!k.equals(userId)) {
-                    WebSocketUtil.sendMessage(v, message);
+                    try {
+                        if (v.isOpen()) {
+                            WebSocketUtil.sendMessage(v, message);
+                        } else {
+                            LOGGER.info("session已断开，不发送{}", v.getId());
+                        }
+                    } catch (Exception e) {
+                        LOGGER.warn("发送到客户端{}失败，跳过", v.getId());
+                    }
                 }
             });
         }
