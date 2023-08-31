@@ -19,7 +19,6 @@ import static com.zeta.ai.utils.WebSocketUtil.ONLINE_SESSION;
 import static com.zeta.ai.utils.WebSocketUtil.MEETING_SESSION_MAPPER;
 
 /**
- * 
  * @Description: 向app端实时推送业务状态信息
  * @Date: 2019/7/16
  **/
@@ -43,7 +42,6 @@ public class WebSocketController {
 
 
     /**
-     * 
      * @Description: 加入连接
      * @Return:
      **/
@@ -57,7 +55,6 @@ public class WebSocketController {
     }
 
     /**
-     * 
      * @Description: 断开连接
      * @Param session:
      * @Return:
@@ -75,22 +72,16 @@ public class WebSocketController {
     }
 
     /**
-     * 
      * @Description: 发送消息
      * @Param message: 消息
      * @Return:
      **/
     @OnMessage
     public void onMessage(@PathParam("userNo") String userNo, String message, Session session) {
-        if(userNo != null) {
+        if (userNo != null) {
             String messageInfo = "服务器对[" + userNo + "]发送消息：" + message;
             LOGGER.info(messageInfo);
             Session recieverSession = ONLINE_SESSION.get(userNo);
-            if ("heart".equalsIgnoreCase(message)) {
-                LOGGER.info("客户端向服务端发送心跳");
-                //向客户端发送心跳连接成功
-                message = "success";
-            }
             //发送普通信息
             WebSocketUtil.sendMessage(recieverSession, message);
         } else {
@@ -98,34 +89,43 @@ public class WebSocketController {
                 LOGGER.debug("接收到事件信息{}", message);
             }
             try {
-                Map<String, Object> data = objectMapper.readValue(message, Map.class);
-
-                // 事件名称
-                String eventName = data.get("eventName").toString();
-                Map<String, String> payload = (Map<String, String>) data.get("payload");
-                // 会议id
-                String meetingId = payload.get("meetingId");
-                // userId
-                String userId = payload.get("userId");
-                if (StringUtils.isNotBlank(meetingId) && StringUtils.isNotBlank(eventName)) {
-                    // 视频上线事件，保存会议信息到session
-                    if (EVENT_ONLINE_WITH_VIDEO_AUDIO_STATE.equals(eventName) || EVENT_ONLINE.equals(eventName)) {
-                        // 获取会议中session列表
-                        Map<String, Session> map = MEETING_SESSION_MAPPER.getOrDefault(meetingId, new HashMap<>());
-                        // 新session加入
-                        map.put(userId, session);
-                        // 加入mapper，在判断用户和会议室的时候可以用
-                        MEETING_SESSION_MAPPER.put(meetingId, map);
-                        // @@@@@@@@@@@@ 可以考虑加个定时判断空map给删除的逻辑，每天夜里轮训一次，把所有结束的会议信息删掉
-                    } else if (EVENT_OFFLINE.equals(eventName)) {
-                        // 视频下线事件，删除相关数据
-                        // 获取会议中session列表
-                        Map<String, Session> map = MEETING_SESSION_MAPPER.getOrDefault(meetingId, new HashMap<>());
-                        map.remove(userId);
+                // 接收到客户端心跳
+                if ("keepalive".equalsIgnoreCase(message)) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.info("客户端 {} 向服务端发送心跳", session.getId());
                     }
-                    // 其他事件类型，直接转发
-                    // 发送所有类型的事件广播
-                    sendMsgToAttendeeInMeeting(meetingId, userId, session, message);
+                    //向客户端发送心跳连接成功
+                    WebSocketUtil.sendMessage(session, "success");
+                } else {
+                    Map<String, Object> data = objectMapper.readValue(message, Map.class);
+
+                    // 事件名称
+                    String eventName = data.get("eventName").toString();
+                    Map<String, String> payload = (Map<String, String>) data.get("payload");
+                    // 会议id
+                    String meetingId = payload.get("meetingId");
+                    // userId
+                    String userId = payload.get("userId");
+                    if (StringUtils.isNotBlank(meetingId) && StringUtils.isNotBlank(eventName)) {
+                        // 视频上线事件，保存会议信息到session
+                        if (EVENT_ONLINE_WITH_VIDEO_AUDIO_STATE.equals(eventName) || EVENT_ONLINE.equals(eventName)) {
+                            // 获取会议中session列表
+                            Map<String, Session> map = MEETING_SESSION_MAPPER.getOrDefault(meetingId, new HashMap<>());
+                            // 新session加入
+                            map.put(userId, session);
+                            // 加入mapper，在判断用户和会议室的时候可以用
+                            MEETING_SESSION_MAPPER.put(meetingId, map);
+                            // @@@@@@@@@@@@ 可以考虑加个定时判断空map给删除的逻辑，每天夜里轮训一次，把所有结束的会议信息删掉
+                        } else if (EVENT_OFFLINE.equals(eventName)) {
+                            // 视频下线事件，删除相关数据
+                            // 获取会议中session列表
+                            Map<String, Session> map = MEETING_SESSION_MAPPER.getOrDefault(meetingId, new HashMap<>());
+                            map.remove(userId);
+                        }
+                        // 其他事件类型，直接转发
+                        // 发送所有类型的事件广播
+                        sendMsgToAttendeeInMeeting(meetingId, userId, session, message);
+                    }
                 }
             } catch (Exception e) {
                 LOGGER.error("数据格式不正确:{}", message);
