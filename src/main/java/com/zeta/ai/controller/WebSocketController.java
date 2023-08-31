@@ -136,11 +136,11 @@ public class WebSocketController {
     @OnError
     public void onError(Session session, Throwable throwable) {
         LOGGER.error(session.getId() + "异常:", throwable);
-        try {
-            session.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            session.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
         throwable.printStackTrace();
     }
 
