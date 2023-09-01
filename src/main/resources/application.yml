@@ -1,6 +1,6 @@
 spring:
   application:
-    name: ai-wrapper
+    name: meeting-ws
   profiles:
     active: local
 
