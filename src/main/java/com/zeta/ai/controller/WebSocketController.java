@@ -149,19 +149,24 @@ public class WebSocketController {
     private void sendMsgToAttendeeInMeeting(String meetingId, String userId, Session mySession, String message) {
         if (MEETING_SESSION_MAPPER.size() > 0) {
             // 需要接收数据的session列表，仅发送给同一个会议室的人, 但不包括自己
-            MEETING_SESSION_MAPPER.get(meetingId).forEach((k, v) -> {
-                if (!k.equals(userId)) {
-                    try {
-                        if (v.isOpen()) {
-                            WebSocketUtil.sendMessage(v, message);
-                        } else {
-                            LOGGER.info("session已断开，不发送{}", v.getId());
+            // 如果没找到这个会议室信息
+            if (MEETING_SESSION_MAPPER.get(meetingId) != null) {
+                MEETING_SESSION_MAPPER.get(meetingId).forEach((k, v) -> {
+                    if (!k.equals(userId)) {
+                        try {
+                            if (v.isOpen()) {
+                                WebSocketUtil.sendMessage(v, message);
+                            } else {
+                                LOGGER.info("session已断开，不发送{}", v.getId());
+                            }
+                        } catch (Exception e) {
+                            LOGGER.warn("发送到客户端{}失败，跳过", v.getId());
                         }
-                    } catch (Exception e) {
-                        LOGGER.warn("发送到客户端{}失败，跳过", v.getId());
                     }
-                }
-            });
+                });
+            } else {
+                LOGGER.warn("会议室{}不存在，不发送广播", meetingId);
+            }
         }
     }
 }
