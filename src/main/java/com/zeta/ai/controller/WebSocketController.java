@@ -31,12 +31,9 @@ public class WebSocketController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketController.class);
 
-    private static final String EVENT_ONLINE_WITH_VIDEO_AUDIO_STATE = "WS_ONLINE_WITH_VIDEO_AUDIO_STATE_EVENT";
-    private static final String EVENT_VIDEO_AUDIO_STATE = "WS_VIDEO_AUDIO_STATE_EVENT";
-    private static final String EVENT_ONLINE = "WS_ONLINE_EVENT";
-    private static final String EVENT_OFFLINE = "WS_OFFLINE_EVENT";
-    private static final String EVENT_START_SHARE = "WS_START_SHARE_EVENT";
-    private static final String EVENT_STOP_SHARE = "WS_STOP_SHARE_EVENT";
+    private static final String EVENT_ONLINE_WITH_VIDEO_AUDIO_STATE = "WS_EVENT_ONLINE_WITH_VIDEO_AUDIO_STATE";
+    private static final String EVENT_ONLINE = "WS_EVENT_ONLINE";
+    private static final String EVENT_OFFLINE = "WS_EVENT_OFFLINE";
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
