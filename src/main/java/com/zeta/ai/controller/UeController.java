@@ -27,7 +27,7 @@ public class UeController {
     private ApplicationContext applicationContext;
 
     @GetMapping("/keepalive")
-    public ResponseEntity keepalive(String test) {
+    public ResponseEntity keepalive() {
         Map map = new HashMap();
         map.put("success", true);
         return new ResponseEntity<>(map, HttpStatus.OK);
