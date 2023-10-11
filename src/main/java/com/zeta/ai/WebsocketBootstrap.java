@@ -1,6 +1,10 @@
 package com.zeta.ai;
 
-import com.zeta.ai.druid.EnableDruidSupport;
+/**
+ * UE端平板网页同步websocket
+ */
+
+//import com.zeta.ai.druid.EnableDruidSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -16,7 +20,6 @@ import java.util.logging.LogManager;
 @ComponentScan("com.zeta.ai")
 @EnableScheduling
 @EnableOpenApi
-@EnableDruidSupport
 @EnableCaching
 @Slf4j
 public class WebsocketBootstrap extends LogManager {
